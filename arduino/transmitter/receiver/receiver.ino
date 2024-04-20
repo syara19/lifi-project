@@ -1,34 +1,52 @@
-#define LDR_PIN A0
-#define THRESHOLD 480
-#define PERIOD 14
 
-bool previous_state;
-bool current_state;
+#define LDR_PIN A2
+#define LED 3
+#define SAMPLING_TIME 100
 
 
-void setup() {
-  // put your setup code here, to run once:
-  pinMode(LDR_PIN,INPUT);
-  Serial.begin(9600); 
 
+//Declaration
+bool led_state = false;
+bool previous_state = true;
+bool current_state = true;
+char buff[64];
+void setup() 
+{
+  pinMode(LED,OUTPUT);
+  Serial.begin(9600);
+  
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
-   current_state = get_ldr();
-   
+void loop() 
+{
+  current_state = get_ldr(); 
+  if(!current_state && previous_state)
+  {
+    sprintf(buff, "%c", get_byte());
+    Serial.print(buff);
+  }
+  digitalWrite(LED, current_state);
+  previous_state = current_state;
 
+  int ldrValue = analogRead(LDR_PIN); 
+  // Serial.print("LDR Value: ");
+  // Serial.print(ldrValue); 
 }
-
 bool get_ldr()
 {
-  int voltage = analogRead(LDR_PIN);
-  return voltage > THRESHOLD ? true:false;
+  bool val = analogRead(LDR_PIN) > 90 ? true : false;
+  digitalWrite(LED, val);
+  return val;
 }
 
-char get_byte(char my_byte)
+char get_byte()
 {
-  char buff[2];
-  sprintf(buff, "%c", my_byte);
-  Serial.print(buff);
+  char data_byte = 0;
+  delay(SAMPLING_TIME * 1.5);
+  for(int i = 0; i < 8; i++)
+  {
+    data_byte = data_byte | (char)get_ldr() << i;
+    delay(SAMPLING_TIME);
+  }
+  return data_byte;
 }
